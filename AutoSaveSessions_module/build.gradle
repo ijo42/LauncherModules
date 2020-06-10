@@ -1,8 +1,0 @@
-def mainClassName = "pro.gravit.launchermodules.autosavesessions.AutoSaveSessionsModule"
-
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
-
-jar {
-    manifest.attributes("Module-Main-Class": mainClassName)
-}
