@@ -1,56 +1,41 @@
-task bundleZip(type: Zip) {
-    archiveFileName = 'modules.zip'
-    destinationDirectory = file("$buildDir")
+plugins {
+    id 'java-library'
+    id 'idea'
+    id 'eclipse'
+}
+group 'pro.gravit.launcher'
+version '1.0.0'
+def mainClassName = "ru.ijo42.gravitmodules.filehasher.FileHasherModule"
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+    options.incremental = true // one flag, and things will get MUCH faster    
 }
 
-if (!project.tasks.findByName('assemble')) {
-    task assemble {
-    }
+jar {
+    manifest.attributes("Module-Main-Class": mainClassName)
 }
 
-if (!project.tasks.findByName('build')) {
-    task build {
+repositories {
+    mavenLocal()
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots"
     }
+    mavenCentral()
 }
 
-subprojects {
-    apply plugin: 'com.github.johnrengelman.shadow'
+dependencies {
+    implementation "pro.gravit.launcher:launcher-core:5.1.6-SNAPSHOT"
+    implementation "pro.gravit.launcher:launchserver-api:5.1.6-SNAPSHOT"
+    implementation "pro.gravit.launcher:launcher-ws-api:5.1.6-SNAPSHOT"
 
-    shadowJar {
-        duplicatesStrategy = 'EXCLUDE'
-        classifier = null
-        configurations = [project.configurations.runtimeClasspath]
-        exclude 'module-info.class'
-    }
-
-    parent.tasks.bundleZip.dependsOn tasks.shadowJar
-    parent.tasks.bundleZip.from tasks.shadowJar
+    implementation 'io.netty:netty-codec-http:4.1.48.Final'
+    implementation 'com.google.code.gson:gson:2.8.6'
 }
 
-configure(subprojects.findAll { it.name.endsWith('_module') }) {
-    dependencies {
-        compileOnly project(':LaunchServer')
-    }
+wrapper {
+    distributionType = Wrapper.DistributionType.ALL
 }
 
-configure(subprojects.findAll { it.name.endsWith('_swmodule') }) {
-    dependencies {
-        compileOnly project(':ServerWrapper')
-    }
-    shadowJar {
-        relocate 'io.netty', 'pro.gravit.repackage.io.netty'
-    }
-}
-
-configure(subprojects.findAll { it.name.endsWith('_lmodule') }) {
-    dependencies {
-        compileOnly project(':Launcher')
-    }
-    shadowJar {
-        relocate 'org.objectweb.asm', 'pro.gravit.repackage.org.objectweb.asm'
-        relocate 'io.netty', 'pro.gravit.repackage.io.netty'
-    }
-}
-
-project.tasks.findByName('assemble').dependsOn tasks.bundleZip
-project.tasks.findByName('build').dependsOn project.tasks.findByName('assemble')
+defaultTasks 'build'
